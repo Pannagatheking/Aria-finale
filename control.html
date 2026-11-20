@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#04121A">
+<title>ARIA Control</title>
+<!-- ARIA Control v1.0 — family app for another phone. Talks to the ARIA app on the robot phone over the internet. -->
+<style>
+:root{--bg:#04121A;--card:#0B2230;--line:#18394A;--fg:#E8F6FA;--mut:#9DB8C4;--acc:#5CE1E6;--yel:#FFE45C;--stop:#E5484D;--ok:#3DD68C;--warn:#F5A524}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{padding-bottom:84px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:19px;margin:0;flex:1;letter-spacing:.02em}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--stop);display:inline-block}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}
+#stTxt{font-size:13px;color:var(--mut)}
+main{padding:14px 16px;display:none;flex-direction:column;gap:12px}
+main.on{display:flex}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card h2{font-size:14px;margin:0 0 8px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.big{font-size:34px;font-weight:800;color:var(--yel);font-variant-numeric:tabular-nums}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button,.btn{min-height:48px;border:1px solid var(--line);background:#12303F;color:var(--fg);border-radius:14px;padding:0 14px;font:600 15px system-ui,sans-serif;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+button.pri{background:var(--acc);color:#04121A;border:0}
+button.stop{background:var(--stop);color:#fff;border:0;font-size:20px;letter-spacing:.1em}
+button.on{background:var(--ok);color:#04121A;border:0}
+input,textarea,select{width:100%;min-height:46px;border-radius:12px;border:1px solid var(--line);background:#071A24;color:var(--fg);font:16px system-ui,sans-serif;padding:10px}
+label{font-size:13px;color:var(--mut);display:block}
+.mut{color:var(--mut);font-size:13px}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(5,1fr);background:#061922;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{border:0;border-radius:0;background:none;min-height:64px;flex-direction:column;font-size:12px;color:var(--mut);gap:2px}
+nav button.sel{color:var(--acc)}
+nav svg{width:24px;height:24px}
+#log{max-height:52vh;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.msg{padding:8px 12px;border-radius:12px;max-width:88%}
+.msg.you{align-self:flex-end;background:#12303F}
+.msg.aria{align-self:flex-start;background:#0F3A2C}
+.msg small{display:block;color:var(--mut);font-size:11px}
+video,#photo{width:100%;border-radius:14px;background:#000;aspect-ratio:4/3;object-fit:cover}
+#photo{display:none}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;user-select:none;-webkit-user-select:none}
+.pad button{min-height:72px;font-size:26px}
+.dev{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.dev:first-child{border-top:0}
+#toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:var(--acc);color:#04121A;font-weight:700;padding:10px 16px;border-radius:12px;display:none;z-index:9;max-width:90vw;text-align:center}
+#pair{position:fixed;inset:0;z-index:20;background:var(--bg);display:none;flex-direction:column;justify-content:center;gap:14px;padding:24px}
+.rem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.rem.due{color:var(--yel);font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="stDot"></span>
+  <h1>ARIA Control</h1>
+  <span id="stTxt">offline</span>
+  <button id="bCode" aria-label="Change pairing code" style="min-height:40px;padding:0 10px">Code</button>
+</header>
+
+<!-- HOME -->
+<main id="tHome" class="on">
+  <div class="card"><h2>ARIA</h2>
+    <div class="row" style="justify-content:space-between"><div><div id="hMood" style="font-size:22px;font-weight:800">—</div><div class="mut" id="hAI"></div></div><div class="mut" id="hMusic"></div></div>
+    <div style="margin-top:8px"><span class="mut">Last said:</span> <span id="hSaid">—</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>Robot</h2><div id="hRobot">—</div></div>
+    <div class="card"><h2>Smart Hub</h2><div id="hHub">—</div></div>
+  </div>
+  <button class="stop" id="hStop">STOP</button>
+  <div class="grid2">
+    <button id="hAllOff">All lights off</button>
+    <button id="hPhoto">Take photo</button>
+    <button id="hLive">Live video</button>
+    <button id="hTalk">Talk to ARIA</button>
+  </div>
+</main>
+
+<!-- TALK -->
+<main id="tTalk">
+  <div class="card"><h2>What ARIA heard and said</h2><div id="log"><div class="mut">Nothing yet.</div></div></div>
+  <div class="card">
+    <label for="tIn">Type here, or tap the mic</label>
+    <textarea id="tIn" rows="2" placeholder="Ask ARIA anything, or type what ARIA should say"></textarea>
+    <div class="grid2" style="margin-top:8px">
+      <button class="pri" id="tAsk">Ask ARIA</button>
+      <button id="tSay">ARIA, say this</button>
+    </div>
+    <button id="tMic" style="width:100%;margin-top:8px">🎤 Speak</button>
+  </div>
+</main>
+
+<!-- DRIVE -->
+<main id="tDrive">
+  <div class="card" style="padding:8px">
+    <video id="vid" playsinline autoplay muted></video>
+    <img id="photo" alt="Photo from ARIA's camera">
+    <div class="grid2" style="margin-top:8px"><button id="dLive">Live video: off</button><button id="dPhoto">Take photo</button></div>
+  </div>
+  <div class="pad">
+    <span></span><button data-d="F" aria-label="Forward">▲</button><span></span>
+    <button data-d="L" aria-label="Turn left">◀</button><button class="stop" id="dStop" aria-label="Stop">■</button><button data-d="R" aria-label="Turn right">▶</button>
+    <span></span><button data-d="B" aria-label="Backward">▼</button><span></span>
+  </div>
+  <p class="mut" style="margin:0">Hold an arrow to drive. Let go = stop. ARIA's own sensors still stop her at walls and edges.</p>
+  <button id="dFollow">Follow me: off</button>
+</main>
+
+<!-- HUB -->
+<main id="tHub">
+  <div class="card"><h2>Power now</h2><div class="big" id="uW">— W</div><div class="mut" id="uMore"></div></div>
+  <div class="card"><h2>Devices</h2><div id="uDevs" class="mut">Hub not connected.</div></div>
+  <div class="card"><h2>Rooms</h2><div id="uRooms" class="mut">—</div></div>
+  <div class="card"><h2>Hub screen</h2>
+    <input id="uText" placeholder="Message for the Hub TV screen" maxlength="120">
+    <div class="grid2" style="margin-top:8px"><button class="pri" id="uSend">Show it</button><button id="uClear">Back to readings</button></div>
+  </div>
+  <button id="uAllOff">All devices OFF</button>
+</main>
+
+<!-- FAMILY -->
+<main id="tFam">
+  <div class="card"><h2>Medicine &amp; reminders</h2><div id="fRem" class="mut">—</div></div>
+  <div class="card"><h2>Add a reminder</h2>
+    <div class="grid2"><div><label for="fPerson">Who</label><input id="fPerson" placeholder="Ajji"></div><div><label for="fTime">Time</label><input id="fTime" type="time"></div></div>
+    <label for="fTask" style="margin-top:8px">What</label><input id="fTask" placeholder="Medicine box 1">
+    <div class="row" style="margin-top:8px;justify-content:space-between"><label style="display:flex;gap:8px;align-items:center"><input id="fDaily" type="checkbox" style="width:22px;min-height:22px"> Every day</label><button class="pri" id="fAdd">Add</button></div>
+  </div>
+  <div class="card"><h2>Call family</h2><div id="fCalls" class="mut">Add family contacts in ARIA's Settings.</div></div>
+  <div class="card"><h2>Open an app on this phone</h2>
+    <div class="row" id="fApps"></div>
+    <div class="row" style="margin-top:8px"><input id="fApp" placeholder="App name" style="flex:1"><button id="fOpen">Open</button></div>
+  </div>
+  <div class="card"><h2>Music on ARIA</h2>
+    <div class="row"><input id="fSong" placeholder="Song name from ARIA's list" style="flex:1"><button id="fPlay">Play</button><button id="fStopSong">Stop</button></div>
+  </div>
+</main>
+
+<nav>
+  <button data-tab="tHome" class="sel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button data-tab="tTalk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg>Talk</button>
+  <button data-tab="tDrive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>Drive</button>
+  <button data-tab="tHub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Hub</button>
+  <button data-tab="tFam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.5a5 5 0 0 1 6 5"/></svg>Family</button>
+</nav>
+
+<div id="pair">
+  <h1 style="margin:0;font-size:26px">Connect to ARIA</h1>
+  <p class="mut" style="margin:0">On the robot phone: ARIA ⚙ Settings → Family app = On. Type the 6-digit pairing code shown there.</p>
+  <input id="pCode" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="font-size:28px;text-align:center;letter-spacing:.3em">
+  <button class="pri" id="pGo">Connect</button>
+</div>
+<div id="toast"></div>
+<a id="tapLink" class="btn" style="display:none;position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--yel);color:#04121A;z-index:9;border:0">Open</a>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const NATIVE = window.AriaNative || null;          // present inside the ARIA Control APK
+const ls = { get(k, d){ try{ const v = localStorage.getItem('ctl_' + k); return v === null ? d : v; }catch(e){ return d; } }, set(k, v){ try{ localStorage.setItem('ctl_' + k, v); }catch(e){} } };
+let peer = null, conn = null, st = null, liveCall = null, liveOn = false, retryT = null;
+
+function toast(t){ const el = $('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => el.style.display = 'none', 3000); }
+function setStatus(kind, text){ $('stDot').className = 'dot ' + kind; $('stTxt').textContent = text; }
+const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+function showTab(id){
+  document.querySelectorAll('main').forEach(m => m.classList.toggle('on', m.id === id));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('sel', b.dataset.tab === id));
+  ls.set('tab', id);
+}
+showTab(ls.get('tab', 'tHome'));
+
+/* ---------- connection ---------- */
+function code(){ return ls.get('code', ''); }
+function showPair(){ $('pair').style.display = 'flex'; $('pCode').value = code(); }
+$('bCode').onclick = showPair;
+$('pGo').onclick = () => { const c = $('pCode').value.replace(/\D/g, ''); if (c.length !== 6) return toast('The code has 6 digits'); ls.set('code', c); $('pair').style.display = 'none'; restart(); };
+function restart(){ try{ conn && conn.close(); }catch(e){} try{ peer && peer.destroy(); }catch(e){} peer = null; conn = null; connect(); }
+function connect(){
+  clearTimeout(retryT);
+  if (!code()){ showPair(); return; }
+  if (!window.Peer){ setStatus('', 'no internet'); retryT = setTimeout(connect, 5000); return; }
+  setStatus('warn', 'connecting…');
+  if (!peer || peer.destroyed){
+    peer = new Peer({ debug: 0 });
+    peer.on('open', openConn);
+    peer.on('call', call => {
+      liveCall = call; call.answer();
+      call.on('stream', s => { const v = $('vid'); v.srcObject = s; v.style.display = 'block'; $('photo').style.display = 'none'; v.play().catch(() => {}); });
+      call.on('close', () => { if (liveCall === call) liveCall = null; });
+    });
+    peer.on('disconnected', () => { try{ peer.reconnect(); }catch(e){} });
+    peer.on('error', e => { setStatus('', e && e.type === 'peer-unavailable' ? 'ARIA not online' : 'offline'); retryT = setTimeout(() => { if (!conn || !conn.open) openConn(); }, 5000); });
+  } else openConn();
+}
+function openConn(){
+  if (!peer || peer.destroyed || !peer.open) return;
+  try{ conn && conn.close(); }catch(e){}
+  conn = peer.connect('aria-' + code(), { reliable: true });
+  conn.on('open', () => { setStatus('ok', 'connected'); if (liveOn) send({ c: 'cam', on: true }); });
+  conn.on('data', onData);
+  conn.on('close', () => { setStatus('', 'offline'); retryT = setTimeout(openConn, 4000); });
+  conn.on('error', () => {});
+}
+function send(o){ if (conn && conn.open){ try{ conn.send(o); return true; }catch(e){} } toast('Not connected to ARIA'); return false; }
+
+/* ---------- messages from ARIA ---------- */
+function onData(d){
+  if (!d || typeof d !== 'object') return;
+  if (d.t === 'state'){ st = d; render(); }
+  else if (d.t === 'log') addLog(d);
+  else if (d.t === 'logs'){ $('log').innerHTML = ''; (d.list || []).forEach(addLog); }
+  else if (d.t === 'msg') toast(d.text);
+  else if (d.t === 'photo'){ const p = $('photo'); p.src = 'data:image/jpeg;base64,' + d.data; p.style.display = 'block'; $('vid').style.display = liveOn ? 'block' : 'none'; toast('Photo received'); }
+  else if (d.t === 'open'){ const r = openHere(d.app, d.pkg); conn.send({ t: 'res', id: d.id, ok: r.ok, msg: r.msg }); }
+  else if (d.t === 'call'){ const r = callHere(d.num, d.name); conn.send({ t: 'res', id: d.id, ok: r.ok, msg: r.msg }); }
+}
+function addLog(e){
+  const box = $('log'); if (box.firstElementChild && box.firstElementChild.classList.contains('mut')) box.innerHTML = '';
+  const div = document.createElement('div'); div.className = 'msg ' + (e.who === 'ARIA' ? 'aria' : 'you');
+  div.innerHTML = '<small>' + esc(e.who) + ' · ' + esc(e.at) + '</small>' + esc(e.text);
+  box.appendChild(div); while (box.children.length > 60) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+}
+function render(){
+  if (!st) return;
+  const moods = { calm: 'Calm', happy: 'Happy', surprised: 'Surprised', sad: 'Sad', sleepy: 'Sleepy', listen: 'Listening…', think: 'Thinking…' };
+  $('hMood').textContent = 'Mood: ' + (moods[st.mood] || st.mood || '—');
+  $('hAI').textContent = st.ai || '';
+  $('hSaid').textContent = st.said || '—';
+  $('hMusic').textContent = st.music ? '♫ ' + st.music : '';
+  const cm = v => v >= 999 ? 'clear' : (v == null || v < 0) ? '—' : v + ' cm';
+  $('hRobot').innerHTML = st.robot.ok ? '<span style="color:var(--ok)">Connected</span><br><span class="mut">Front ' + cm(st.robot.f) + ' · Back ' + cm(st.robot.r) + (st.robot.edge ? ' · EDGE' : '') + '</span>' : '<span class="mut">Not connected</span>';
+  const h = st.hub, names = st.names || [];
+  if (h.ok){
+    const on = (h.r || []).map((v, i) => v ? (names[i] || 'Device ' + (i + 1)) : null).filter(Boolean);
+    $('hHub').innerHTML = '<b>' + Math.round(h.w) + ' W</b><br><span class="mut">' + (on.length ? esc(on.join(', ')) + ' ON' : 'all OFF') + '</span>';
+    $('uW').textContent = (h.w < 1000 ? h.w.toFixed(1) : Math.round(h.w)) + ' W';
+    $('uMore').textContent = (h.pz ? Math.round(h.v) + ' V · ' + h.a.toFixed(2) + ' A · ' : 'estimated · ') + 'Units ' + (h.wh / 1000).toFixed(3) + ' kWh';
+    const devs = $('uDevs'); devs.classList.remove('mut');
+    if (devs.children.length !== 4) devs.innerHTML = [0, 1, 2, 3].map(i => '<div class="dev"><span id="dn' + i + '"></span><button id="db' + i + '" data-n="' + (i + 1) + '" style="min-width:86px"></button></div>').join('');
+    for (let i = 0; i < 4; i++){
+      const isOn = !!(h.r || [])[i];
+      $('dn' + i).textContent = names[i] || 'Device ' + (i + 1);
+      const b = $('db' + i); b.textContent = isOn ? 'ON' : 'OFF'; b.className = isOn ? 'on' : '';
+      b.onclick = () => send({ c: 'hub', n: i + 1, on: !isOn });
+    }
+    const rn = [(names[0] || 'Room 1').split(' ')[0], (names[2] || 'Room 2').split(' ')[0]];
+    $('uRooms').innerHTML = [0, 1].map(r => esc(rn[r]) + ': ' + ((h.m || [])[r] ? '<b style="color:var(--ok)">someone</b>' : 'empty ' + ((h.e || [])[r] || 0) + ' s')).join('<br>') + '<br><span class="mut">Auto-off after ' + h.as + ' s with nobody</span>';
+  } else {
+    $('hHub').innerHTML = '<span class="mut">Not connected</span>'; $('uW').textContent = '— W'; $('uMore').textContent = ''; $('uDevs').className = 'mut'; $('uDevs').textContent = 'Hub not connected.'; $('uRooms').textContent = '—';
+  }
+  const rem = st.rem || [];
+  $('fRem').classList.toggle('mut', !rem.length);
+  $('fRem').innerHTML = rem.length ? rem.map(r => '<div class="rem' + (r.due ? ' due' : '') + '"><span>' + esc(r.time) + ' · ' + esc(r.person) + ' · ' + esc(r.task) + (r.daily ? ' (daily)' : '') + (r.due ? ' — WAITING' : '') + '</span>' +
+    (r.due ? '<button data-done="' + esc(r.person) + '">Done</button>' : '') + '<button data-del="' + r.id + '" aria-label="Delete reminder">✕</button></div>').join('') : 'No reminders.';
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => send({ c: 'remdel', id: +b.dataset.del }));
+  document.querySelectorAll('[data-done]').forEach(b => b.onclick = () => send({ c: 'remdone', person: b.dataset.done }));
+  const cts = st.contacts || [];
+  const key = JSON.stringify(cts);
+  if ($('fCalls').dataset.k !== key){
+    $('fCalls').dataset.k = key; $('fCalls').classList.toggle('mut', !cts.length);
+    $('fCalls').innerHTML = cts.length ? '<div class="row">' + cts.map((c, i) => '<button data-call="' + i + '">Call ' + esc(c.name) + '</button>').join('') + '</div>' : 'Add family contacts in ARIA\'s Settings.';
+    document.querySelectorAll('[data-call]').forEach(b => b.onclick = () => { const c = cts[+b.dataset.call]; const r = callHere(c.num, c.name); if (r.msg) toast(r.msg); });
+  }
+  $('dFollow').textContent = 'Follow me: ' + (st.follow ? 'ON' : 'off'); $('dFollow').className = st.follow ? 'on' : '';
+}
+
+/* ---------- open apps + calls on THIS phone ---------- */
+function openHere(app, pkg){
+  if (NATIVE){
+    let r = ''; try{ r = NATIVE.openApp(String(app || ''), String(pkg || '')); }catch(e){ r = 'error'; }
+    return r === 'opened' ? { ok: true, msg: 'Opened ' + app } : { ok: false, msg: app + ' is not installed on the other phone.' };
+  }
+  const href = pkg ? 'intent://#Intent;package=' + pkg + ';S.browser_fallback_url=' + encodeURIComponent('https://play.google.com/store/search?q=' + app) + ';end' : 'https://play.google.com/store/search?q=' + encodeURIComponent(app);
+  showTap('Open ' + app, href);
+  return { ok: false, msg: 'Tap the yellow button on the other phone to open ' + app + '.' };
+}
+function callHere(num, name){
+  if (NATIVE){ let r = ''; try{ r = NATIVE.call(String(num)); }catch(e){ r = 'error'; } return { ok: r === 'calling' || r === 'dialer', msg: r === 'dialer' ? 'Dialer opened for ' + name + '.' : '' }; }
+  showTap('Call ' + name, 'tel:' + num);
+  return { ok: false, msg: 'Tap the yellow button to call ' + name + '.' };
+}
+function showTap(label, href){ const a = $('tapLink'); a.textContent = label; a.href = href; a.style.display = 'inline-flex'; clearTimeout(showTap.t); showTap.t = setTimeout(() => a.style.display = 'none', 20000); }
+$('tapLink').onclick = () => setTimeout(() => $('tapLink').style.display = 'none', 300);
+const QUICK = [['WhatsApp', 'com.whatsapp'], ['Rapido', 'com.rapido.passenger'], ['Gemini', 'com.google.android.apps.bard'], ['YouTube', 'com.google.android.youtube'], ['Maps', 'com.google.android.apps.maps']];
+$('fApps').innerHTML = QUICK.map((q, i) => '<button data-q="' + i + '">' + q[0] + '</button>').join('');
+document.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const q = QUICK[+b.dataset.q]; const r = openHere(q[0], q[1]); if (!r.ok && NATIVE) toast(r.msg); });
+$('fOpen').onclick = () => { const a = $('fApp').value.trim(); if (!a) return; const r = openHere(a, ''); if (!r.ok && NATIVE) toast(r.msg); };
+
+/* ---------- buttons ---------- */
+const stop = () => send({ c: 'stop' });
+$('hStop').onclick = stop; $('dStop').onclick = stop;
+$('hAllOff').onclick = () => send({ c: 'alloff' }); $('uAllOff').onclick = () => send({ c: 'alloff' });
+const photo = () => { if (send({ c: 'photo' })) toast('Taking photo…'); };
+$('hPhoto').onclick = () => { showTab('tDrive'); photo(); }; $('dPhoto').onclick = photo;
+function setLive(on){
+  liveOn = on; $('dLive').textContent = 'Live video: ' + (on ? 'ON' : 'off'); $('dLive').className = on ? 'on' : '';
+  if (!on){ try{ liveCall && liveCall.close(); }catch(e){} liveCall = null; $('vid').srcObject = null; }
+  send({ c: 'cam', on });
+}
+$('dLive').onclick = () => setLive(!liveOn);
+$('hLive').onclick = () => { showTab('tDrive'); if (!liveOn) setLive(true); };
+$('hTalk').onclick = () => showTab('tTalk');
+$('tAsk').onclick = () => { const t = $('tIn').value.trim(); if (t && send({ c: 'ask', text: t })){ $('tIn').value = ''; addLog({ who: 'You (remote)', text: t, at: new Date().toTimeString().slice(0, 5) }); } };
+$('tSay').onclick = () => { const t = $('tIn').value.trim(); if (t && send({ c: 'say', text: t })){ $('tIn').value = ''; toast('ARIA is saying it'); } };
+$('uSend').onclick = () => { const t = $('uText').value.trim(); if (t) send({ c: 'hubtext', text: t }); };
+$('uClear').onclick = () => send({ c: 'hubtext', text: '' });
+$('fAdd').onclick = () => {
+  const person = $('fPerson').value.trim(), task = $('fTask').value.trim(), time = $('fTime').value;
+  if (!person || !task || !time) return toast('Fill who, what and time');
+  if (send({ c: 'remadd', person, task, time, daily: $('fDaily').checked })){ $('fTask').value = ''; }
+};
+$('fPlay').onclick = () => { const n = $('fSong').value.trim(); if (n) send({ c: 'song', name: n }); };
+$('fStopSong').onclick = () => send({ c: 'song', name: '' });
+$('dFollow').onclick = () => send({ c: 'follow', on: !(st && st.follow) });
+
+/* hold-to-drive: one command every 200 ms while held; let go = stop */
+let holdT = null, holdDir = null;
+document.querySelectorAll('.pad [data-d]').forEach(b => {
+  const go = e => { e.preventDefault(); holdDir = b.dataset.d; send({ c: 'drive', d: holdDir }); clearInterval(holdT); holdT = setInterval(() => { if (!send({ c: 'drive', d: holdDir })) end(e); }, 200); };
+  const end = e => { if (e) e.preventDefault(); if (!holdDir) return; holdDir = null; clearInterval(holdT); stop(); };
+  b.addEventListener('pointerdown', go); b.addEventListener('pointerup', end); b.addEventListener('pointerleave', end); b.addEventListener('pointercancel', end);
+  b.addEventListener('contextmenu', e => e.preventDefault());
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && holdDir){ holdDir = null; clearInterval(holdT); stop(); } });
+
+/* ---------- voice on this phone ---------- */
+window.ariaHeard = text => { if (text){ $('tIn').value = text; $('tAsk').click(); } };
+$('tMic').onclick = () => {
+  if (NATIVE && NATIVE.listen){ try{ NATIVE.listen(); }catch(e){ toast('Mic not available'); } return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return toast('Mic needs the ARIA Control app or Chrome');
+  const r = new SR(); r.lang = 'en-IN'; r.interimResults = false;
+  r.onresult = e => window.ariaHeard(e.results[0][0].transcript);
+  r.onerror = () => toast('Did not hear you'); r.start(); toast('Listening…');
+};
+
+connect();
+</script>
+</body>
+</html>
